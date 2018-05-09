@@ -56,6 +56,8 @@ def main():
             gt.ImageAttribMessageReader(args.outfile, args.out_group))
     con.register_reader(gt.GADGET_MESSAGE_ISMRMRD_IMAGEWITHATTRIB_CPLX_FLOAT,
             gt.ImageAttribMessageReader(args.outfile, args.out_group))
+    con.register_reader(gt.GADGET_MESSAGE_ISMRMRD_IMAGE,
+            gt.ImageAttribMessageReader(args.outfile, args.out_group))
 
     # DICOM
     con.register_reader(gt.GADGET_MESSAGE_DICOM,

@@ -5,12 +5,13 @@ import socket
 import threading
 import numpy as np
 
-GADGET_MESSAGE_INT_ID_MIN                             =   0
-GADGET_MESSAGE_CONFIG_FILE                            =   1
-GADGET_MESSAGE_CONFIG_SCRIPT                          =   2
-GADGET_MESSAGE_PARAMETER_SCRIPT                       =   3
-GADGET_MESSAGE_CLOSE                                  =   4
-GADGET_MESSAGE_INT_ID_MAX                             = 999
+GADGET_MESSAGE_INT_ID_MIN                             =    0
+GADGET_MESSAGE_CONFIG_FILE                            =    1
+GADGET_MESSAGE_CONFIG_SCRIPT                          =    2
+GADGET_MESSAGE_PARAMETER_SCRIPT                       =    3
+GADGET_MESSAGE_CLOSE                                  =    4
+GADGET_MESSAGE_TEXT                                   =    5
+GADGET_MESSAGE_INT_ID_MAX                             =  999
 GADGET_MESSAGE_EXT_ID_MIN                             = 1000
 GADGET_MESSAGE_ACQUISITION                            = 1001 # DEPRECATED
 GADGET_MESSAGE_NEW_MEASUREMENT                        = 1002 # DEPRECATED
@@ -20,17 +21,22 @@ GADGET_MESSAGE_IMAGE_REAL_FLOAT                       = 1005 # DEPRECATED
 GADGET_MESSAGE_IMAGE_REAL_USHORT                      = 1006 # DEPRECATED
 GADGET_MESSAGE_EMPTY                                  = 1007 # DEPRECATED
 GADGET_MESSAGE_ISMRMRD_ACQUISITION                    = 1008
-GADGET_MESSAGE_ISMRMRD_IMAGE_CPLX_FLOAT               = 1009
-GADGET_MESSAGE_ISMRMRD_IMAGE_REAL_FLOAT               = 1010
-GADGET_MESSAGE_ISMRMRD_IMAGE_REAL_USHORT              = 1011
-GADGET_MESSAGE_DICOM                                  = 1012
+GADGET_MESSAGE_ISMRMRD_IMAGE_CPLX_FLOAT               = 1009 # DEPRECATED
+GADGET_MESSAGE_ISMRMRD_IMAGE_REAL_FLOAT               = 1010 # DEPRECATED
+GADGET_MESSAGE_ISMRMRD_IMAGE_REAL_USHORT              = 1011 # DEPRECATED
+GADGET_MESSAGE_DICOM                                  = 1012 # DEPRECATED
 GADGET_MESSAGE_CLOUD_JOB                              = 1013
 GADGET_MESSAGE_GADGETCLOUD_JOB                        = 1014
-GADGET_MESSAGE_ISMRMRD_IMAGEWITHATTRIB_CPLX_FLOAT     = 1015
-GADGET_MESSAGE_ISMRMRD_IMAGEWITHATTRIB_REAL_FLOAT     = 1016
-GADGET_MESSAGE_ISMRMRD_IMAGEWITHATTRIB_REAL_USHORT    = 1017
+GADGET_MESSAGE_ISMRMRD_IMAGEWITHATTRIB_CPLX_FLOAT     = 1015 # DEPRECATED
+GADGET_MESSAGE_ISMRMRD_IMAGEWITHATTRIB_REAL_FLOAT     = 1016 # DEPRECATED
+GADGET_MESSAGE_ISMRMRD_IMAGEWITHATTRIB_REAL_USHORT    = 1017 # DEPRECATED
 GADGET_MESSAGE_DICOM_WITHNAME                         = 1018
 GADGET_MESSAGE_DEPENDENCY_QUERY                       = 1019
+GADGET_MESSAGE_ISMRMRD_IMAGE_REAL_SHORT               = 1020 # DEPRECATED
+GADGET_MESSAGE_ISMRMRD_IMAGEWITHATTRIB_REAL_SHORT     = 1021 # DEPRECATED
+GADGET_MESSAGE_ISMRMRD_IMAGE                          = 1022
+GADGET_MESSAGE_RECONDATA                              = 1023
+GADGET_MESSAGE_ISMRMRD_WAVEFORM                       = 1026
 GADGET_MESSAGE_EXT_ID_MAX                             = 4096
 
 MAX_BLOBS_LOG_10 = 6
@@ -92,9 +98,9 @@ class ImageAttribMessageReader(ImageMessageReader):
         # read image header
         serialized_header = readsock(sock, ismrmrd.hdf5.image_header_dtype.itemsize)
         # read meta attributes
-        msg = readsock(self.sock, SIZEOF_GADGET_MESSAGE_ATTRIB_LENGTH)
+        msg = readsock(sock, SIZEOF_GADGET_MESSAGE_ATTRIB_LENGTH)
         attrib_len = GadgetMessageAttribLength.unpack(msg)[0]
-        attribs = readsock(self.sock, attrib_len)
+        attribs = readsock(sock, attrib_len)
 
         # make a new image        
         img = ismrmrd.Image(serialized_header, attribs)
@@ -119,9 +125,9 @@ class BlobMessageReader(MessageReader):
 
     def read(self, sock):
         # read sizeof blob data and blob data itself
-        msg = readsock(self.sock, SIZEOF_GADGET_MESSAGE_BLOB_SIZE)
+        msg = readsock(sock, SIZEOF_GADGET_MESSAGE_BLOB_SIZE)
         nbytes = GadgetMessageBlobSize.unpack(msg)[0]
-        blob = readsock(self.sock, nbytes)
+        blob = readsock(sock, nbytes)
 
         filename = '%s_%06d.%s' (self.prefix, self.num_calls, self.suffix)
         with open(filename, 'wb') as f:
@@ -132,19 +138,19 @@ class BlobMessageReader(MessageReader):
 class BlobAttribMessageReader(BlobMessageReader):
     def read(self, sock):
         # read blob data
-        msg = readsock(self.sock, SIZEOF_GADGET_MESSAGE_BLOB_SIZE)
+        msg = readsock(sock, SIZEOF_GADGET_MESSAGE_BLOB_SIZE)
         nbytes = GadgetMessageBlobSize.unpack(msg)[0]
-        blob = readsock(self.sock, nbytes)
+        blob = readsock(sock, nbytes)
 
         # read filename
-        msg = readsock(self.sock, SIZEOF_GADGET_MESSAGE_BLOB_FILENAME)
+        msg = readsock(sock, SIZEOF_GADGET_MESSAGE_BLOB_FILENAME)
         filename_len = GadgetMessageBlobFilename.unpack(msg)[0]
-        filename = readsock(self.sock, filename_len)
+        filename = readsock(sock, filename_len)
 
         # read meta attributes
-        msg = readsock(self.sock, SIZEOF_GADGET_MESSAGE_ATTRIB_LENGTH)
+        msg = readsock(sock, SIZEOF_GADGET_MESSAGE_ATTRIB_LENGTH)
         attrib_len = GadgetMessageAttribLength.unpack(msg)[0]
-        attribs = readsock(self.sock, attrib_len)
+        attribs = readsock(sock, attrib_len)
 
         # save files
         filename_image = '%s.%s' % (filename, self.suffix)
